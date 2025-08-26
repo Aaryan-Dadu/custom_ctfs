@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transmission</title>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/monaco-editor/min/vs/loader.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="transmission.ico">
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Transmission</h1>
+        </div>
+        
+        <div class="main-content">
+            <div class="editor-section">
+                <div id="monaco-editor"></div>
+                <button id="submit-code" class="button">Submit</button>
+                <div class="output-section">
+                    <div id="code-output" class="output-content"></div>
+                </div>
+            </div>
+            
+            <div class="key-section">
+                <textarea 
+                    id="key-textarea" 
+                    placeholder="Enter 6-digit key..."
+                    maxlength="6"
+                ></textarea>
+                <div class="button-group">
+                    <button id="submit-key" class="button">Submit</button>
+                </div>
+                <div class="output-section">
+                    <div id="key-output" class="output-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor/min/vs' } });
+        
+        require(['vs/editor/editor.main'], function () {
+            const editor = monaco.editor.create(document.getElementById('monaco-editor'), {
+                value: '# Making KEY a global constant variable for development, will change it later\n# KEY = XXXXXX\n\nimport requests\n\n# Write Your Code Here\n',
+                language: 'python',
+                theme: 'vs-dark',
+                automaticLayout: true,
+                minimap: { enabled: true },
+                fontSize: 14,
+                lineNumbers: 'on',
+                roundedSelection: false,
+                scrollBeyondLastLine: false,
+                readOnly: false,
+                cursorStyle: 'line',
+                tabSize: 2
+            });
+            document.getElementById('submit-code').addEventListener('click', async function() {
+                const code = editor.getValue();
+                console.log(code);
+
+                try {
+                    const response = await fetch('http://127.0.0.1:5000/code', {
+                        method: 'POST',
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({code})
+                    });
+                    const res = await response.json();
+                    console.log(res);
+                    const codeOutput = document.getElementById('code-output');
+                    codeOutput.textContent = `${JSON.stringify(res.out)}`
+                }
+                catch {
+                    const codeOutput = document.getElementById('code-output');
+                    codeOutput.textContent = "Failed To Run"
+                }
+
+            });
+
+            document.getElementById('submit-key').addEventListener('click',async function() {
+                const key = document.getElementById('key-textarea').value.trim();
+                
+                if (!/^\d{6}$/.test(key)) {
+                    alert('Enter exactly 6 digits (0-9).');
+                    return;
+                }
+                console.log(key);
+
+                try {
+                    const response = await fetch('http://127.0.0.1:5000/key', {
+                        method: 'POST',
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({key})
+                    });
+                    const res = await response.json();
+                    console.log(res);
+                    const keyOutput = document.getElementById('key-output');
+                    keyOutput.textContent = `${JSON.stringify(res.out)}`
+                }
+                catch {
+                    const keyOutput = document.getElementById('key-output');
+                    keyOutput.textContent = "Failed To Run"
+                }
+            });
+
+            document.getElementById('key-textarea').addEventListener('input', function(e) {
+                this.value = this.value.replace(/\D/g, '');
+            });
+        });
+    </script>
+</body>
+</html>
